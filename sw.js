@@ -1,4 +1,4 @@
-const CACHE_NAME = "inventario-pwa-v3";
+const CACHE_NAME = "inventario-pwa-v4";
 const ASSETS = [
   "./",
   "./index.html",
@@ -25,7 +25,6 @@ self.addEventListener("fetch", (e) => {
   const req = e.request;
   const url = new URL(req.url);
 
-  // Cache only GitHub Pages assets, not Apps Script calls.
   if (url.origin === location.origin) {
     e.respondWith(
       caches.match(req).then(hit => hit || fetch(req).then(res => {

@@ -21,9 +21,8 @@ async function apiPost(body){
   return res.json();
 }
 
-export async function ping(){
-  return apiGet({ action:"ping" });
-}
+export async function ping(){ return apiGet({ action:"ping" }); }
+export async function init(){ return apiGet({ action:"init" }); }
 
 export async function nextId(entity){
   if (navigator.onLine){
@@ -31,7 +30,6 @@ export async function nextId(entity){
     if (!r?.ok) throw new Error(r?.error || "Erro nextId");
     return r.id;
   }
-  // Offline fallback: timestamp-based (mantém prefixo Pr-)
   const ts = Date.now().toString().slice(-12);
   return `Pr-${ts}`;
 }
@@ -54,7 +52,7 @@ export async function create(entity, payload){
   }
   const q = { id: crypto.randomUUID(), ts: Date.now(), op: "create", entity, payload };
   await queueAdd(q);
-  return { ...payload, _rowId: null, _offline: true };
+  return { ...payload, _offline: true };
 }
 
 export async function update(entity, rowId, payload){
@@ -65,7 +63,7 @@ export async function update(entity, rowId, payload){
   }
   const q = { id: crypto.randomUUID(), ts: Date.now(), op: "update", entity, rowId, payload };
   await queueAdd(q);
-  return { ...payload, _rowId: rowId, _offline: true };
+  return { ...payload, _offline: true };
 }
 
 export async function remove(entity, rowId){
@@ -76,7 +74,7 @@ export async function remove(entity, rowId){
   }
   const q = { id: crypto.randomUUID(), ts: Date.now(), op: "delete", entity, rowId };
   await queueAdd(q);
-  return { deletedRowId: rowId, _offline: true };
+  return { deleted: rowId, _offline: true };
 }
 
 export async function syncQueue(){
@@ -107,6 +105,4 @@ export async function syncQueue(){
   return { ok:true, synced, pending: (await queueList()).length };
 }
 
-export async function getQueueCount(){
-  return (await queueList()).length;
-}
+export async function getQueueCount(){ return (await queueList()).length; }
