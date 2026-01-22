@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inventário • Veículos & Composições</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0b1220" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">IV</div>
+      <div>
+        <div class="title">Inventário</div>
+        <div class="subtitle">Cadastro de Veículos e Composições</div>
+      </div>
+    </div>
+
+    <div class="statusbar">
+      <span id="netBadge" class="badge">…</span>
+      <button id="syncBtn" class="btn ghost" title="Sincronizar fila offline">Sync</button>
+      <button id="refreshBtn" class="btn ghost" title="Recarregar dados">Atualizar</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div class="card-head">
+        <h2>Novo cadastro</h2>
+
+        <div class="row gap">
+          <label class="field">
+            <span>Tipo de Cadastro</span>
+            <select id="entitySelect">
+              <option value="vehicles">Veículo</option>
+              <option value="compositions">Composição</option>
+            </select>
+          </label>
+          <div class="actions">
+            <button id="newBtn" class="btn">Novo</button>
+            <button id="saveBtn" class="btn primary">Salvar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-body" id="formArea"></div>
+
+      <div class="card-foot">
+        <div class="hint">
+          <span class="dot"></span>
+          Offline: ações ficam na fila e sincronizam quando voltar a conexão.
+        </div>
+        <div id="formMsg" class="msg"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Registros</h2>
+        <div class="row gap">
+          <label class="field grow">
+            <span>Busca</span>
+            <input id="searchInput" type="search" placeholder="Digite placa, frota, chassi, id…" />
+          </label>
+          <label class="field">
+            <span>Mostrar</span>
+            <select id="limitSelect">
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="250">250</option>
+              <option value="999999">Todos</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="table-wrap">
+          <table class="table" id="dataTable">
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card-foot">
+        <div id="queueInfo" class="hint"></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>Feito com ❤️ por Everton Tezzon Ferreira</span>
+    </footer>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
