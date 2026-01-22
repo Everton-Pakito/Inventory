@@ -1,7 +1,7 @@
 {
   "name": "Inventário - Veículos & Composições",
   "short_name": "Inventário",
-  "start_url": "./",
+  "start_url": "/Inventory/",
   "display": "standalone",
   "background_color": "#0b1220",
   "theme_color": "#0b1220",
@@ -16,5 +16,6 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "scope": "/Inventory/"
 }

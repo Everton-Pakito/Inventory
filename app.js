@@ -1,3 +1,25 @@
+
+// Failsafe: mostra erro na tela em caso de falha de JS (evita "tela branca")
+function showFatal(msg){
+  try{
+    const div = document.createElement("div");
+    div.style.position="fixed";
+    div.style.inset="12px";
+    div.style.padding="12px 14px";
+    div.style.border="1px solid rgba(255,79,109,.45)";
+    div.style.background="rgba(255,79,109,.12)";
+    div.style.color="rgba(20,20,20,.92)";
+    div.style.borderRadius="14px";
+    div.style.zIndex="9999";
+    div.style.fontFamily="ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial";
+    div.style.maxWidth="720px";
+    div.innerHTML = "<b>Erro ao carregar o app</b><br/>" + String(msg || "Abra o console do navegador.");
+    document.body.appendChild(div);
+  }catch(_){}
+}
+window.addEventListener("error", (e)=>showFatal(e.message));
+window.addEventListener("unhandledrejection", (e)=>showFatal(e.reason?.message || e.reason));
+
 import * as api from "./api.js";
 
 const el = (id) => document.getElementById(id);
