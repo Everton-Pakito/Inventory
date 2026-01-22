@@ -1,5 +1,5 @@
-const CACHE_NAME = "inventario-pwa-v5";
-const ASSETS = [
+const CACHE_NAME = "inventario-pwa-v6";
+const CORE_ASSETS = [
   "/Inventory/",
   "/Inventory/index.html",
   "/Inventory/styles.css",
@@ -12,29 +12,44 @@ const ASSETS = [
 ];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)));
+  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(CORE_ASSETS)));
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.map(k => k !== CACHE_NAME ? caches.delete(k) : null)))
+    caches.keys()
+      .then(keys => Promise.all(keys.map(k => k !== CACHE_NAME ? caches.delete(k) : null)))
       .then(() => self.clients.claim())
   );
 });
 
+// Strategy:
+// - Navigations: cache-first for index.html (offline support)
+// - Static assets (css/js/img): network-first, fallback to cache (never return index.html)
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   const url = new URL(req.url);
 
-  // Cacheia apenas o que está dentro do escopo /Inventory/
-  if (url.pathname.startsWith("/Inventory/")) {
+  if (!url.pathname.startsWith("/Inventory/")) return;
+
+  // Navigations
+  if (req.mode === "navigate") {
     e.respondWith(
-      caches.match(req).then(hit => hit || fetch(req).then(res => {
+      caches.match("/Inventory/index.html").then(cached => cached || fetch(req))
+    );
+    return;
+  }
+
+  // Static assets
+  e.respondWith(
+    fetch(req).then(res => {
+      // Only cache successful responses
+      if (res && res.ok) {
         const copy = res.clone();
         caches.open(CACHE_NAME).then(c => c.put(req, copy));
-        return res;
-      }).catch(() => caches.match("/Inventory/index.html")))
-    );
-  }
+      }
+      return res;
+    }).catch(() => caches.match(req))
+  );
 });
