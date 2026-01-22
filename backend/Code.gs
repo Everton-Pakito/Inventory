@@ -7,7 +7,13 @@ const ID_PAD = 6;
 
 const SHEETS = {
   vehicles: { name: "Vehicles", headers: ["id","status","frota","placa","chassi","marca","modelo","ano","tipo"] },
-  compositions: { name: "Compositions", headers: ["id","status","tipoModulo","tipoImplemento","frota","placa","chassi","marca","ano"] }
+  // Composições com até 4 módulos (cada módulo: tipo + placa + chassi)
+  compositions: { name: "Compositions", headers: ["id","status","tipoModulo","frota","marca","ano",
+    "tipoImplemento1","placa1","chassi1",
+    "tipoImplemento2","placa2","chassi2",
+    "tipoImplemento3","placa3","chassi3",
+    "tipoImplemento4","placa4","chassi4"
+  ] }
 };
 
 function doGet(e) {
@@ -47,10 +53,8 @@ function doPost(e) {
     assertEntity(entity);
 
     if (action === "create") {
-      // ID automático: se payload.id vier vazio, o backend gera um novo no padrão Pr-000001
       const payload = body.payload || {};
       if (!payload.id || String(payload.id).trim() === "") payload.id = nextId(entity);
-
       const row = createRow(entity, payload);
       return jsonOut({ ok: true, entity, row });
     }
@@ -151,7 +155,6 @@ function nextId(entity){
   const lastRow = sh.getLastRow();
   if (lastRow < 2) return ID_PREFIX + pad(1);
 
-  // Lê apenas a coluna "id" (coluna 1)
   const ids = sh.getRange(2, 1, lastRow - 1, 1).getValues().flat();
   let maxNum = 0;
 

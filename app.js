@@ -20,9 +20,18 @@ let currentEntity = "vehicles";
 let editingRowId = null;
 let currentData = [];
 
+const TIPO_MODULO_TO_COUNT = {
+  "1 Módulo (Solteiro)": 1,
+  "2 Módulo (Duplado)": 2,
+  "3 Módulo (Tremiado)": 3,
+  "4 Módulo (Tremiado + Dolly)": 4
+};
+
+const tipoImplementoOptions = ["Semi-Reboque","Reboque","Dolly-Reboque"];
+const marcaComposicaoOptions = ["Fachinni","Randon","Usicamp"];
+
 const schema = {
   vehicles: {
-    label: "Veículo",
     fields: [
       { key:"tipo", label:"Tipo", type:"select", options:["Leve","Semi-Leve","Cavalo Mecânico"], required:true },
       { key:"id", label:"Id (automático)", type:"text", required:true, readonly:true },
@@ -38,22 +47,18 @@ const schema = {
   },
 
   compositions: {
-    label: "Composição",
-    fields: [
+    baseFields: [
       { key:"tipoModulo", label:"Tipo (Módulos)", type:"select",
-        options:["1 Módulo (Solteiro)","2 Módulo (Duplado)","3 Módulo (Tremiado)","4 Módulo (Tremiado + Dolly)"],
+        options:Object.keys(TIPO_MODULO_TO_COUNT),
         required:true
       },
       { key:"id", label:"Id (automático)", type:"text", required:true, readonly:true },
       { key:"status", label:"Status", type:"select", options:["Ativo","Inativo","Manutenção"], required:true },
-      { key:"tipoImplemento", label:"Tipo (Implemento)", type:"select", options:["Semi-Reboque","Reboque","Dolly-Reboque"], required:true },
       { key:"frota", label:"Frota", type:"text" },
-      { key:"placa", label:"Placa", type:"text" },
-      { key:"chassi", label:"Chassi", type:"text" },
-      { key:"marca", label:"Marca", type:"select", options:["Fachinni","Randon","Usicamp"], required:true },
+      { key:"marca", label:"Marca", type:"select", options:marcaComposicaoOptions, required:true },
       { key:"ano", label:"Ano", type:"number" }
     ],
-    table: ["id","status","frota","placa","marca","ano","tipoModulo","tipoImplemento"]
+    table: ["id","status","frota","marca","ano","tipoModulo","placa1","placa2","placa3","placa4"]
   }
 };
 
@@ -70,45 +75,91 @@ function statusPill(status){
   return `<span class="pill bad">Inativo</span>`;
 }
 
-function renderForm(entity, data={}){
-  const cfg = schema[entity];
-  const fieldsHtml = cfg.fields.map(f => {
-    const val = data[f.key] ?? "";
-    const req = f.required ? "required" : "";
-    const ro = f.readonly ? "readonly" : "";
-    if (f.type === "select"){
-      const opts = f.options.map(o => `<option ${String(o)===String(val)?"selected":""}>${o}</option>`).join("");
-      return `
-        <label class="field">
-          <span>${f.label}</span>
-          <select data-key="${f.key}" ${req}>
-            <option value="" ${val===""?"selected":""} disabled>Selecione…</option>
-            ${opts}
-          </select>
-        </label>
-      `;
-    }
-    const type = f.type || "text";
+function fieldHtml(f, value){
+  const val = value ?? "";
+  const req = f.required ? "required" : "";
+  const ro = f.readonly ? "readonly" : "";
+  if (f.type === "select"){
+    const opts = (f.options || []).map(o => `<option ${String(o)===String(val)?"selected":""}>${o}</option>`).join("");
     return `
       <label class="field">
         <span>${f.label}</span>
-        <input data-key="${f.key}" type="${type}" value="${escapeHtml(String(val))}" ${req} ${ro} />
+        <select data-key="${f.key}" ${req}>
+          <option value="" ${val===""?"selected":""} disabled>Selecione…</option>
+          ${opts}
+        </select>
       </label>
     `;
-  }).join("");
-
-  formArea.innerHTML = `<div class="grid">${fieldsHtml}</div>`;
+  }
+  const type = f.type || "text";
+  return `
+    <label class="field">
+      <span>${f.label}</span>
+      <input data-key="${f.key}" type="${type}" value="${escapeHtml(String(val))}" ${req} ${ro} />
+    </label>
+  `;
 }
 
-function getFormPayload(entity){
-  const cfg = schema[entity];
-  const payload = {};
-  for (const f of cfg.fields){
-    const input = formArea.querySelector(`[data-key="${f.key}"]`);
-    let v = input?.value ?? "";
-    if (f.type === "number" && v !== "") v = Number(v);
-    payload[f.key] = v;
+function moduleBlockHtml(i, data){
+  const placaKey = `placa${i}`;
+  const chassiKey = `chassi${i}`;
+  const tipoKey = `tipoImplemento${i}`;
+
+  return (
+    fieldHtml({ key: tipoKey, label: `Módulo ${i} • Tipo`, type:"select", options: tipoImplementoOptions, required:true }, data[tipoKey] ?? "") +
+    fieldHtml({ key: placaKey, label: `Módulo ${i} • Placa`, type:"text", required:true }, data[placaKey] ?? "") +
+    fieldHtml({ key: chassiKey, label: `Módulo ${i} • Chassi`, type:"text", required:true }, data[chassiKey] ?? "")
+  );
+}
+
+function renderCompositionsForm(data={}){
+  const cfg = schema.compositions;
+  const baseFieldsHtml = cfg.baseFields.map(f => fieldHtml(f, data[f.key])).join("");
+
+  const tipoModulo = data.tipoModulo ?? "1 Módulo (Solteiro)";
+  const count = TIPO_MODULO_TO_COUNT[tipoModulo] || 1;
+
+  let modulesHtml = "";
+  for (let i=1;i<=count;i++) modulesHtml += moduleBlockHtml(i, data);
+
+  formArea.innerHTML = `
+    <div class="grid">${baseFieldsHtml}</div>
+    <div style="height:12px"></div>
+    <h2 style="margin:0 0 10px 0; font-size:14px; color: rgba(233,240,255,.9);">Módulos</h2>
+    <div class="grid">${modulesHtml}</div>
+  `;
+
+  const sel = formArea.querySelector('[data-key="tipoModulo"]');
+  if (sel){
+    sel.value = tipoModulo;
+    sel.addEventListener("change", () => {
+      const snapshot = getFormPayload();
+      snapshot.tipoModulo = sel.value;
+      renderCompositionsForm(snapshot);
+      ensureAutoId().catch(()=>{});
+    });
   }
+}
+
+function renderVehiclesForm(data={}){
+  const cfg = schema.vehicles;
+  const html = cfg.fields.map(f => fieldHtml(f, data[f.key])).join("");
+  formArea.innerHTML = `<div class="grid">${html}</div>`;
+}
+
+function renderForm(entity, data={}){
+  if (entity === "compositions") return renderCompositionsForm(data);
+  return renderVehiclesForm(data);
+}
+
+function getFormPayload(){
+  const payload = {};
+  formArea.querySelectorAll("[data-key]").forEach(inp => {
+    const key = inp.getAttribute("data-key");
+    let v = inp.value ?? "";
+    if (inp.type === "number" && v !== "") v = Number(v);
+    payload[key] = v;
+  });
   return payload;
 }
 
@@ -118,11 +169,28 @@ function setFormField(key, value){
 }
 
 function validate(entity, payload){
-  const cfg = schema[entity];
-  const missing = cfg.fields
+  if (entity === "vehicles"){
+    const missing = schema.vehicles.fields
+      .filter(f => f.required)
+      .filter(f => String(payload[f.key] ?? "").trim() === "")
+      .map(f => f.label);
+    return missing;
+  }
+
+  const missing = schema.compositions.baseFields
     .filter(f => f.required)
     .filter(f => String(payload[f.key] ?? "").trim() === "")
     .map(f => f.label);
+
+  const count = TIPO_MODULO_TO_COUNT[payload.tipoModulo] || 1;
+  for (let i=1;i<=count;i++){
+    const tipoKey = `tipoImplemento${i}`;
+    const placaKey = `placa${i}`;
+    const chassiKey = `chassi${i}`;
+    if (!String(payload[tipoKey] ?? "").trim()) missing.push(`Módulo ${i} • Tipo`);
+    if (!String(payload[placaKey] ?? "").trim()) missing.push(`Módulo ${i} • Placa`);
+    if (!String(payload[chassiKey] ?? "").trim()) missing.push(`Módulo ${i} • Chassi`);
+  }
   return missing;
 }
 
@@ -218,29 +286,35 @@ function escapeHtml(s){
 }
 
 async function ensureAutoId(){
-  // Só gera ID automaticamente quando for "novo"
   if (editingRowId) return;
   try{
     const id = await api.nextId(currentEntity);
     setFormField("id", id);
-  }catch(_){
-    // silencioso: validação já exige id; tentaremos novamente
-  }
+  }catch(_){}
 }
 
 async function onSave(){
-  const payload = getFormPayload(currentEntity);
+  const payload = getFormPayload();
 
-  // Garantir ID automático antes de validar
   if (!payload.id || String(payload.id).trim()===""){
     await ensureAutoId();
-    payload.id = getFormPayload(currentEntity).id;
+    payload.id = getFormPayload().id;
   }
 
   const missing = validate(currentEntity, payload);
   if (missing.length){
     setMsg(`Campos obrigatórios: ${missing.join(", ")}`, false);
     return;
+  }
+
+  // limpa módulos não usados (consistência para a planilha)
+  if (currentEntity === "compositions"){
+    const count = TIPO_MODULO_TO_COUNT[payload.tipoModulo] || 1;
+    for (let i=count+1;i<=4;i++){
+      payload[`tipoImplemento${i}`] = "";
+      payload[`placa${i}`] = "";
+      payload[`chassi${i}`] = "";
+    }
   }
 
   try{
@@ -260,7 +334,11 @@ async function onSave(){
 
 async function onNew(){
   editingRowId = null;
-  renderForm(currentEntity, {});
+  if (currentEntity === "compositions"){
+    renderForm(currentEntity, { tipoModulo: "1 Módulo (Solteiro)" });
+  } else {
+    renderForm(currentEntity, {});
+  }
   await ensureAutoId();
 }
 

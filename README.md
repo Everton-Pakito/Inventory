@@ -1,23 +1,16 @@
 # Inventário (Web App + PWA) com Google Sheets (CRUD)
 
-Este projeto é um **sistema de cadastro e inventário** (Veículos e Composições) para rodar como **Web App** no **GitHub Pages** e usar **Google Sheets como banco de dados** (via **Google Apps Script Web App**).
+Sistema de cadastro e inventário (Veículos e Composições) para rodar no **GitHub Pages** e usar **Google Sheets** como banco de dados via **Google Apps Script (Web App)**.
 
 Inclui:
-- CRUD completo: **criar / listar / editar / excluir**
-- **PWA** (instalável, cache offline)
-- **Offline-first**: fila de sincronização com **IndexedDB**
-- **ID automático** no padrão **Pr-000001** (por entidade)
+- CRUD completo: criar / listar / editar / excluir
+- PWA (instalável + cache offline)
+- Offline-first: fila de sincronização com IndexedDB
+- ID automático padrão **Pr-000001** (sequencial por aba)
 
 ---
 
-## 1) Pré-requisitos
-- Conta Google
-- Planilha no Google Sheets
-- Repositório no GitHub com GitHub Pages habilitado
-
----
-
-## 2) Configurar a planilha (Google Sheets)
+## 1) Configurar a planilha (Google Sheets)
 
 Crie uma planilha e duas abas:
 
@@ -30,75 +23,60 @@ id,status,frota,placa,chassi,marca,modelo,ano,tipo
 ### Aba: `Compositions`
 Na linha 1 (cabeçalho), cole:
 ```
-id,status,tipoModulo,tipoImplemento,frota,placa,chassi,marca,ano
+id,status,tipoModulo,frota,marca,ano,tipoImplemento1,placa1,chassi1,tipoImplemento2,placa2,chassi2,tipoImplemento3,placa3,chassi3,tipoImplemento4,placa4,chassi4
 ```
 
+> Regra: o campo **Tipo (Módulos)** define quantos módulos aparecem no formulário.  
+> - 1 Módulo: preenche módulo 1  
+> - 2 Módulos: preenche módulos 1 e 2  
+> - 3 Módulos: preenche módulos 1,2,3  
+> - 4 Módulos: preenche módulos 1,2,3,4  
+> Os módulos não usados são gravados vazios na planilha.
+
 ---
 
-## 3) Configurar o Google Apps Script (API CRUD)
+## 2) Configurar o Google Apps Script (API)
 
 1. Abra a planilha > **Extensões > Apps Script**
-2. Crie o arquivo `Code.gs` e cole o conteúdo de `backend/Code.gs` (neste ZIP)
+2. Cole o conteúdo de `backend/Code.gs`
 3. Em `Code.gs`, configure:
-   - `SPREADSHEET_ID = "..."` (ID da planilha)
+   - `SPREADSHEET_ID = "..."` (ID da sua planilha)
 4. Clique em **Deploy > New deployment**
-5. Selecione **Web app**
-6. Configure:
-   - Execute as: **Me**
-   - Who has access: **Anyone**
-7. Finalize o deploy e copie a URL que termina com `/exec`
+5. Tipo: **Web app**
+6. Execute as: **Me**
+7. Who has access: **Anyone**
+8. Conclua e copie a URL (termina com `/exec`)
 
-### Teste rápido da API
-No navegador, abra:
+### Testes rápidos
 - `.../exec?action=ping`
 - `.../exec?action=list&entity=vehicles`
-- `.../exec?action=nextId&entity=vehicles`
+- `.../exec?action=nextId&entity=compositions`
 
 ---
 
-## 4) Configurar o Frontend (GitHub Pages)
+## 3) Configurar o Frontend (GitHub Pages)
 
-1. No projeto (frontend), abra `api.js` e cole a URL do Apps Script em:
-   - `const API_URL = "COLE_AQUI_SUA_URL_DO_APPS_SCRIPT";`
+1. Abra `api.js` e cole a URL do Apps Script em:
+   - `const API_URL = "..."`
 
-2. Suba os arquivos para seu repositório (raiz do repo):
-- `index.html`
-- `styles.css`
-- `app.js`
-- `api.js`
-- `db.js`
-- `sw.js`
-- `manifest.webmanifest`
-- `icons/`
+2. Suba os arquivos na raiz do seu repositório.
 
-3. No GitHub:
+3. Ative o GitHub Pages:
 - Settings > Pages
 - Source: Deploy from a branch
 - Branch: `main` / root
 
-Abra a URL do GitHub Pages.
+---
+
+## 4) Uso
+- Selecione Veículo ou Composição
+- Clique em Novo
+- O campo Id é preenchido automaticamente
+- Salve, edite e exclua na tabela
+- Offline: ações entram em fila. Ao reconectar, use Sync (ou sincroniza automaticamente ao voltar online).
 
 ---
 
-## 5) Como usar
-- Selecione **Veículo** ou **Composição**
-- Clique **Novo**
-- O campo **Id** é preenchido automaticamente com **Pr-000001** (sequencial por aba)
-- Preencha os demais campos e clique **Salvar**
-- Na tabela, use **Editar** e **Excluir**
-- Se ficar **offline**, as ações entram na fila
-- Ao voltar online, clique **Sync** (ou ele tenta sincronizar automaticamente ao reconectar)
-
----
-
-## 6) Observações importantes (Google Apps Script)
-- Para **alterar a planilha**, faça novo deploy (ou use **Manage deployments**).
-- Se você recriar o deploy, a URL pode mudar. Atualize `API_URL` no `api.js`.
-
----
-
-## 7) Estrutura do ZIP
-- `/` frontend (GitHub Pages)
-- `/backend/Code.gs` (cole no Apps Script)
-
-Bom trabalho.
+## Estrutura
+- `/` frontend
+- `/backend/Code.gs` backend (cole no Apps Script)

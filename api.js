@@ -3,12 +3,6 @@ import { cacheGet, cacheSet, queueAdd, queueList, queueDelete } from "./db.js";
 // COLE A URL DO SEU DEPLOY DO APPS SCRIPT (termina com /exec)
 const API_URL = "COLE_AQUI_SUA_URL_DO_APPS_SCRIPT";
 
-// Prefixo do ID automático
-const ID_PREFIX = "Pr-";
-const ID_PAD = 6;
-
-function pad(n){ return String(n).padStart(ID_PAD, "0"); }
-
 async function apiGet(params){
   const url = new URL(API_URL);
   Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
@@ -32,17 +26,14 @@ export async function ping(){
 }
 
 export async function nextId(entity){
-  // Online: backend decide o próximo ID com segurança
   if (navigator.onLine){
     const r = await apiGet({ action:"nextId", entity });
     if (!r?.ok) throw new Error(r?.error || "Erro nextId");
     return r.id;
   }
-
-  // Offline: gera um ID local mantendo o padrão "Pr-" (sem garantia de sequência)
-  // Ex.: Pr-240121193012 (baseado em timestamp)
+  // Offline fallback: timestamp-based (mantém prefixo Pr-)
   const ts = Date.now().toString().slice(-12);
-  return `${ID_PREFIX}${ts}`;
+  return `Pr-${ts}`;
 }
 
 export async function list(entity){
@@ -61,13 +52,7 @@ export async function create(entity, payload){
     if (!r?.ok) throw new Error(r?.error || "Erro create");
     return r.row;
   }
-  const q = {
-    id: crypto.randomUUID(),
-    ts: Date.now(),
-    op: "create",
-    entity,
-    payload
-  };
+  const q = { id: crypto.randomUUID(), ts: Date.now(), op: "create", entity, payload };
   await queueAdd(q);
   return { ...payload, _rowId: null, _offline: true };
 }
@@ -78,14 +63,7 @@ export async function update(entity, rowId, payload){
     if (!r?.ok) throw new Error(r?.error || "Erro update");
     return r.row;
   }
-  const q = {
-    id: crypto.randomUUID(),
-    ts: Date.now(),
-    op: "update",
-    entity,
-    rowId,
-    payload
-  };
+  const q = { id: crypto.randomUUID(), ts: Date.now(), op: "update", entity, rowId, payload };
   await queueAdd(q);
   return { ...payload, _rowId: rowId, _offline: true };
 }
@@ -96,13 +74,7 @@ export async function remove(entity, rowId){
     if (!r?.ok) throw new Error(r?.error || "Erro delete");
     return r.result;
   }
-  const q = {
-    id: crypto.randomUUID(),
-    ts: Date.now(),
-    op: "delete",
-    entity,
-    rowId
-  };
+  const q = { id: crypto.randomUUID(), ts: Date.now(), op: "delete", entity, rowId };
   await queueAdd(q);
   return { deletedRowId: rowId, _offline: true };
 }
